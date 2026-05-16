@@ -44,7 +44,8 @@ Con este laboratorio se reforzaron conceptos relacionados con protocolos de comu
 
 ### 2.2 Explicacion del codigo implementado.
 
-# Descripción del módulo `i2c.h`
+
+## i2c.h
 
 ```c
 #ifndef I2C_H
@@ -66,16 +67,14 @@ void I2C_write(unsigned char data);
 #endif
 ```
 
-En este bloque se define el archivo de cabecera encargado de la comunicación I²C.  
-Se incluye la librería `<xc.h>` para acceder a los registros internos del PIC. Además, se crean macros para configurar los pines RC3 y RC4 como líneas SCL y SDA, tanto en modo digital como en dirección de entrada/salida.  
+<p align="justify" style="text-indent:40px;">
+Este archivo contiene las definiciones necesarias para configurar y utilizar la comunicación serial mediante el módulo MSSP. Las directivas #ifndef, #define y #endif evitan múltiples inclusiones del archivo durante la compilación, previniendo errores de redefinición. La librería <xc.h> permite acceder a los registros internos del PIC, mientras que las macros simplifican el acceso a los bits asociados a los pines SCL y SDA. Finalmente, se declaran los prototipos de las funciones encargadas de inicializar el módulo I2C, generar condiciones START y STOP, y transmitir datos a través del bus.
+</p>
 
-Finalmente, se declaran los prototipos de las funciones principales del módulo I²C, permitiendo inicializar el protocolo, generar condiciones de inicio y parada, y enviar datos al dispositivo esclavo. Básicamente, aquí se deja listo el “manual de instrucciones” para que el resto del programa no termine escribiendo jeroglíficos eléctricos.
-
----
-
-# Descripción de la función `I2C_init()`
+## i2c.c
 
 ```c
+#include "i2c.h"
 void I2C_init(void)
 {
     TRIS_SCL = 1;
@@ -91,16 +90,9 @@ void I2C_init(void)
     SSPCON1bits.SSPEN = 1;
 }
 ```
-
-En esta función se realiza la configuración inicial del módulo MSSP del PIC para trabajar en modo I²C maestro.  
-
-Primero, los pines SCL y SDA se configuran como entradas, ya que el protocolo I²C maneja líneas compartidas con resistencias pull-up. Luego, se deshabilita la función analógica de los pines RC3 y RC4 para que funcionen únicamente como señales digitales.  
-
-Posteriormente, se configuran los registros `SSPSTAT`, `SSPCON1`, `SSPCON2` y `SSPADD`, definiendo el modo maestro y la velocidad de comunicación. Finalmente, se habilita el módulo MSSP mediante el bit `SSPEN`. Traducción humana: el PIC deja de improvisar y empieza a hablar I²C de manera civilizada.
-
----
-
-# Descripción de la función `I2C_start()`
+<p align="justify" style="text-indent:40px;">
+Este archivo incluye la cabecera i2c.h, permitiendo utilizar todas las definiciones. Primero se inicializa el módulo MSSP en modo I2C Maestro y se configuran los pines SCL y SDA como entradas, debido a que el protocolo I2C trabaja con líneas  mediante resistencias pull-up y se desactiva la función analógica de ambos pines para asegurar su funcionamiento digital. Los registros SSPSTAT, SSPCON1 y SSPCON2 establecen la configuración del módulo MSSP, habilitando el modo I2C Master y definiendo el comportamiento de la comunicación serial. El valor cargado en SSPADD ajusta la frecuencia de operación aproximadamente a 100 kHz, mientras que el bit SSPEN habilita finalmente el funcionamiento del periférico.
+</p>
 
 ```c
 void I2C_start(void)
@@ -109,17 +101,7 @@ void I2C_start(void)
     while(!PIR1bits.SSPIF);
     PIR1bits.SSPIF = 0;
 }
-```
 
-Esta función genera la condición de inicio (START) del protocolo I²C.  
-
-Al activar el bit `SEN`, el microcontrolador indica el comienzo de la transmisión de datos sobre el bus I²C. Luego, el programa espera hasta que la bandera `SSPIF` indique que la operación fue completada correctamente. Finalmente, la bandera se limpia para futuras operaciones.
-
----
-
-# Descripción de la función `I2C_stop()`
-
-```c
 void I2C_stop(void)
 {
     SSPCON2bits.PEN = 1;
@@ -128,13 +110,9 @@ void I2C_stop(void)
 }
 ```
 
-En esta función se genera la condición de parada (STOP) del protocolo I²C.  
-
-El bit `PEN` permite finalizar la transmisión de datos en el bus. Después, el programa espera a que el hardware confirme que la operación terminó correctamente y limpia la bandera de interrupción correspondiente.
-
----
-
-# Descripción de la función `I2C_write()`
+<p align="justify" style="text-indent:40px;">
+Esta función genera la condición START para iniciar cualquier transmisión sobre el bus. El bit SEN produce la secuencia de inicio entre las líneas SDA y SCL, el programa permanece en espera mediante un ciclo while hasta que la bandera SSPIF indica que la operación ha finalizado correctamente y finalmente, dicha bandera se limpia manualmente para preparar el módulo para futuras operaciones de comunicación. La siguiente función genera la condición STOP para finalizar una transmisión y liberar el bus de comunicación, el bit PEN activa automáticamente la secuencia y el ciclo de espera verifica continuamente la bandera SSPIF hasta confirmar que concluyó, entonces la bandera de interrupción es reiniciada manualmente para evitar conflictos en futuras transmisiones.
+</p>
 
 ```c
 void I2C_write(unsigned char data)
@@ -144,16 +122,11 @@ void I2C_write(unsigned char data)
     PIR1bits.SSPIF = 0;
 }
 ```
+<p align="justify" style="text-indent:40px;">
+Esta función transmite un byte de información, el dato recibido como parámetro es cargado en el registro SSPBUF, lo que inicia automáticamente la transmisión serial, entonces, el programa espera hasta que la bandera SSPIF indique que el envío del dato ha finalizado y la bandera es limpiada manualmente para dejar el periférico preparado para futuras transmisiones.
+</p>
 
-Esta función permite enviar un byte de información mediante el bus I²C.  
-
-El dato recibido como parámetro se almacena en el registro `SSPBUF`, encargado de transmitir la información serialmente. El programa espera hasta que la transmisión finalice y posteriormente limpia la bandera `SSPIF`.  
-
-Con esta función se pueden enviar comandos, direcciones o caracteres hacia dispositivos esclavos, como la LCD con adaptador PCF8574. Pequeño detalle elegante: toda la comunicación visual del laboratorio depende de este byte viajando disciplinadamente por dos cables.
-
----
-
-# Descripción del módulo `i2c_lcd.h`
+## i2c_lcd.h
 
 ```c
 #ifndef LCD_I2C_H
@@ -173,17 +146,17 @@ void lcd_create_char(unsigned char location, unsigned char *charmap);
 #endif
 ```
 
-En este bloque se define el archivo de cabecera para el control de la pantalla LCD mediante I²C.  
+<p align="justify" style="text-indent:40px;">
+Aqui encontramos las definiciones y prototipos necesarios para controlar una pantalla LCD mediante comunicación I2C. La constante _XTAL_FREQ define la frecuencia de operación del microcontrolador y es utilizada por las funciones de retardo del compilador. La constante ADDRESS_LCD almacena la dirección I2C del módulo adaptador conectado al LCD. Además, se declaran las funciones encargadas de inicializar la pantalla, enviar comandos, posicionar el cursor, escribir caracteres y cadenas de texto, limpiar el display y crear caracteres personalizados dentro de la memoria CGRAM del LCD.
+</p>
 
-Se establece la frecuencia de trabajo del microcontrolador con `_XTAL_FREQ`, necesaria para utilizar funciones de retardos. Además, se define la dirección I²C de la LCD (`0x4E`) correspondiente al módulo PCF8574.  
-
-También se declaran las funciones encargadas de inicializar la pantalla, enviar comandos, posicionar el cursor, escribir caracteres, mostrar cadenas completas, limpiar la pantalla y crear caracteres personalizados.
-
----
-
-# Descripción de la función `lcd_init()`
+## i2c_lcd.c
 
 ```c
+#include <xc.h>
+#include "i2c.h"
+#include "i2c_lcd.h"
+
 void lcd_init(void)
 {
     __delay_ms(20);
@@ -197,15 +170,9 @@ void lcd_init(void)
 }
 ```
 
-Esta función inicializa la pantalla LCD en modo de comunicación de 4 bits.  
-
-Inicialmente se realiza un pequeño retardo para asegurar la estabilización de la pantalla. Luego, se envían varios comandos de configuración que permiten definir el modo de operación, activar el display, configurar el cursor y limpiar la pantalla.  
-
-El último retardo garantiza que la LCD termine correctamente el proceso de inicialización antes de recibir nuevos datos. Porque las LCD antiguas tienen el temperamento de una impresora de los 90: si no esperas el tiempo exacto, simplemente dejan de cooperar.
-
----
-
-# Descripción de la función `lcd_cmd()`
+<p align="justify" style="text-indent:40px;">
+Se incluyen los .h y .c antes de definir la función que inicializa la pantalla LCD en modo de comunicación de 4 bits siguiendo la secuencia requerida por el controlador HD44780,se aplica un retardo para asegurar la estabilización del display. Los comandos enviados configuran el modo de operación, habilitan dos líneas de visualización, desactivan el cursor visible y establecen el desplazamiento automático del cursor después de cada escritura. Finalmente, el comando de limpieza borra cualquier información previa almacenada en pantalla y el retardo adicional garantiza que el LCD complete correctamente la operación interna.
+</p>
 
 ```c
 void lcd_cmd(unsigned char cmd)
@@ -222,19 +189,7 @@ void lcd_cmd(unsigned char cmd)
     I2C_write(data_l | 0x08);
     I2C_stop();
 }
-```
 
-Esta función envía comandos de control a la pantalla LCD mediante el protocolo I²C.  
-
-El comando se divide en dos partes de 4 bits: parte alta (`data_u`) y parte baja (`data_l`), ya que la LCD trabaja en modo de 4 bits. Posteriormente, se inicia la comunicación I²C y se envían los datos junto con señales de control para habilitar la escritura en la pantalla.  
-
-Finalmente, se cierra la comunicación con la condición STOP.
-
----
-
-# Descripción de la función `lcd_write_char()`
-
-```c
 void lcd_write_char(char c)
 {
     char data_u, data_l;
@@ -250,11 +205,9 @@ void lcd_write_char(char c)
     I2C_stop();
 }
 ```
-
-Esta función permite escribir un carácter individual en la pantalla LCD.  
-
-El carácter también se divide en dos partes de 4 bits para adaptarse al modo de operación de la LCD. Luego, los datos son enviados mediante I²C junto con los bits de control necesarios para indicar que la información corresponde a datos y no a comandos.
-
+<p align="justify" style="text-indent:40px;">
+Esta función permite enviar comandos de control al LCD utilizando comunicación I2C en modo de 4 bits. El comando recibido se divide en un nibble alto y un nibble bajo debido a la forma de operación interna del display. Posteriormente se inicia la comunicación I2C y se transmite la dirección del módulo adaptador. Cada nibble es enviado activando y desactivando el bit Enable mediante operaciones lógicas OR, generando así el pulso necesario para que el LCD almacene correctamente la información recibida. Finalmente, se genera la condición STOP para finalizar la transmisión.
+</p>
 
 ```c
 void lcd_set_cursor(unsigned char row, unsigned char col)
@@ -262,14 +215,7 @@ void lcd_set_cursor(unsigned char row, unsigned char col)
     if (row == 0) lcd_cmd(0x80 + col);
     else lcd_cmd(0xC0 + col);
 }
-```
 
-Esta función posiciona el cursor de la pantalla LCD en una fila y columna específicas.  
-
-Si la fila seleccionada es la primera, se utiliza la dirección base `0x80`; de lo contrario, se utiliza `0xC0` para la segunda fila. Luego, se envía el comando correspondiente a la LCD.
-
-
-```c
 void lcd_write_string(const char *str)
 {
     while(*str != '\0')
@@ -279,10 +225,9 @@ void lcd_write_string(const char *str)
 }
 ```
 
-Esta función permite mostrar una cadena completa de caracteres en la pantalla LCD.  
-
-El programa recorre el string carácter por carácter hasta encontrar el terminador nulo (`'\0'`). Cada carácter es enviado individualmente utilizando la función `lcd_write_char()`.
-
+<p align="justify" style="text-indent:40px;">
+La primera función posiciona el cursor del LCD utilizando las direcciones internas de memoria DDRAM . Si se selecciona la primera fila, se utiliza la dirección base 0x80, mientras que para la segunda fila se utiliza 0xC0. La columna deseada se suma a la dirección correspondiente para ubicar exactamente la posición donde comenzará la escritura del siguiente carácter. Seguidamente la otra función permite escribir cadenas completas de texto en la pantalla LCD recorriendo secuencialmente cada carácter almacenado en memoria con un puntero El ciclo se ejecutara  hasta encontrar el carácter nulo '\0', el cual indica el final de la cadena.
+</p>
 
 ```c
 void lcd_clear(void)
@@ -290,14 +235,7 @@ void lcd_clear(void)
     lcd_cmd(0x01);
     __delay_ms(2);
 }
-```
 
-Esta función limpia completamente el contenido mostrado en la pantalla LCD.  
-
-El comando `0x01` borra todos los caracteres y devuelve el cursor a la posición inicial. Luego, se realiza un pequeño retardo para asegurar que la LCD complete correctamente la operación.
-
-
-```c
 void lcd_create_char(unsigned char location, unsigned char *charmap)
 {
     location &= 0x07;
@@ -313,13 +251,148 @@ void lcd_create_char(unsigned char location, unsigned char *charmap)
 }
 ```
 
-Esta función permite crear caracteres personalizados en la memoria CGRAM de la pantalla LCD.  
-
-Primero, se limita la ubicación del carácter entre 0 y 7, ya que la LCD solo permite almacenar ocho caracteres personalizados simultáneamente. Luego, se selecciona la dirección de memoria correspondiente y se envían los 8 bytes que definen el diseño del carácter fila por fila.  
-
-Finalmente, el cursor regresa a la memoria principal de la pantalla. Gracias a esta función fue posible construir animaciones y gráficos personalizados, porque aparentemente ver un caballo pixelado caminar en 16×2 sigue produciendo satisfacción científica legítima.
+<p align="justify" style="text-indent:40px;">
+Esta función limpia  el contenido de la pantalla LCD con el comando 0x01. Debido a que esta operación requiere un tiempo de procesamiento interno se implementa un retardo de 2 ms. La siguiente función permite almacenar caracteres personalizados dentro de la memoria CGRAM del LCD. Inicialmente se limita la variable location a valores entre 0 y 7, ya que el controlador únicamente admite ocho caracteres definidos por el usuario. Posteriormente se calcula la dirección correspondiente dentro de la memoria CGRAM utilizando desplazamiento de bits. El ciclo for recorre las ocho filas binarias que conforman el patrón gráfico del carácter y las escribe secuencialmente en la memoria interna del display. Finalmente, se retorna al modo normal de escritura sobre la memoria DDRAM para continuar mostrando texto convencional.
+</p>
 
 
+## main (CADENA DE TEXTO Y TEXTI ESTATICO)
+
+```C
+#pragma config FOSC = INTIO67
+#pragma config PLLCFG = OFF
+#pragma config WDTEN = OFF
+#pragma config LVP = OFF
+#pragma config PBADEN = OFF
+
+#define _XTAL_FREQ 48000000UL
+
+#include <xc.h>
+
+#include "i2c.h"
+#include "i2c_lcd.h"
+```
+
+<p align="justify" style="text-indent:40px;">
+Este bloque inicial configura los bits de configuración del microcontrolador PIC, definiendo parámetros fundamentales de funcionamiento del sistema. Se selecciona el oscilador interno como fuente de reloj, se desactiva el PLL, el Watchdog Timer y la programación en bajo voltaje para evitar reinicios o conflictos innecesarios durante la ejecución. Además, se deshabilita el modo analógico por defecto del PORTB. La constante _XTAL_FREQ define la frecuencia de operación utilizada por las funciones de retardo del compilador. Finalmente, se incluyen las librerías necesarias para acceder tanto a los registros internos del PIC como a las funciones de comunicación I2C y control del LCD implementadas en los módulos anteriores.
+</p>
+
+
+```C
+void scrollLinea2(const char *texto)
+{
+    unsigned int len = 0;
+
+    while(texto[len] != '\0')
+        len++;
+
+    while(1)
+    {
+        for(unsigned int inicio = 0; inicio < len + 16; inicio++)
+        {
+            lcd_set_cursor(1,0);
+
+            for(unsigned char k = 0; k < 16; k++)
+            {
+                unsigned int pos = inicio + k;
+
+                if(pos < len)
+                    lcd_write_char(texto[pos]);
+                else
+                    lcd_write_char(' ');
+            }
+
+            __delay_ms(200);
+        }
+    }
+}
+```
+ <p align="justify" style="text-indent:40px;"> 
+Aqui se implementa un efecto de desplazamiento horizontal de texto sobre la segunda fila del LCD. Inicialmente se calcula manualmente la longitud de la cadena recibida recorriendo el arreglo carácter por carácter hasta encontrar el terminador nulo '\0'. Posteriormente se utiliza un ciclo infinito para mantener el desplazamiento continuo del mensaje. La variable inicio controla la posición inicial visible del texto, mientras que el ciclo interno recorre las 16 columnas disponibles del display. En cada iteración se calcula la posición real del carácter a mostrar y, si dicha posición excede la longitud del mensaje, se escriben espacios en blanco para generar el efecto visual de salida progresiva del texto. Finalmente, se aplica un retardo de 200 ms para controlar la velocidad del desplazamiento.
+</p>
+
+```c
+void main(void)
+{
+    OSCCON = 0x70;
+
+    ANSELC = 0x00;
+    ANSELD = 0x00;
+    ANSELE = 0x00;
+
+    I2C_init();
+
+    __delay_ms(100);
+
+    lcd_init();
+
+    lcd_clear();
+
+    lcd_set_cursor(0,0);
+    lcd_write_string("ORNITORRINCO");
+
+    scrollLinea2("¿Un ornitorrinco?...... !!PERRY EL ORNITORRINCO!!   ");
+}
+```
+
+ <p align="justify" style="text-indent:40px;"> 
+ La función principal realiza toda la configuración e inicialización primero se configura el oscilador interno mediante el registro OSCCON, estableciendo la frecuencia de operación y se deshabilitan las funciones analógicas de los puertos para el modo digital. Luego se inicializa el módulo I2C y se aplica un pequeño retardo para garantizar la estabilización al iniciar la pantalla LCD. Una vez inicializado el display, se limpia la pantalla y se posiciona el cursor al inicio de la primera fila para mostrar un texto fijo. Finalmente, se llama a la función scrollLinea2(), la cual ejecuta indefinidamente el desplazamiento del mensaje en la segunda línea del LCD. Básicamente el programa entra en un bucle permanente mostrando el texto animado indefinidamente.
+ </p>
+
+## main (CABALLO)
+
+```c
+#pragma config FOSC = INTIO67
+#pragma config PLLCFG = OFF
+#pragma config WDTEN = OFF
+#pragma config LVP = OFF
+#pragma config PBADEN = OFF
+
+#define _XTAL_FREQ 16000000UL
+
+#include <xc.h>
+
+#include "i2c.h"
+#include "i2c_lcd.h"
+#include "caballo.h"
+```
+
+ <p align="justify" style="text-indent:40px;"> 
+Este bloque inicial establece la configuración principal del microcontrolador PIC y define los parámetros básicos de funcionamiento del sistema. Se selecciona el oscilador interno como fuente de reloj y se desactivan módulos como el PLL, el Watchdog Timer y la programación en bajo voltaje para evitar reinicios o interferencias innecesarias durante la ejecución. La constante _XTAL_FREQ define la frecuencia de trabajo utilizada por las funciones de retardo del compilador. Además, se incluyen las librerías necesarias para acceder a los registros internos del PIC, controlar la comunicación I2C, manejar el display LCD y utilizar las funciones de animación del caballo definidas en el módulo caballo.h.
+ </p>
+
+```c
+void main(void)
+{
+    OSCCON = 0x70;
+
+    ANSELC = 0x00;
+    ANSELD = 0x00;
+    ANSELE = 0x00;
+
+    I2C_init();
+
+    __delay_ms(100);
+
+    lcd_init();
+
+    lcd_clear();
+
+    lcd_set_cursor(0,0);
+    lcd_write_string("Caballo I2C");
+
+    __delay_ms(2000);
+
+    while(1)
+    {
+        CabTrot();
+    }
+}
+```
+
+ <p align="justify" style="text-indent:40px;"> 
+Esta es la función principal, configura la inicialización necesaria para ejecutar la animación del caballo sobre la pantalla LCD. Inicialmente se activa oscilador interno y establece su frecuencia de operación, luego se deshabilitan las funciones analógicas para usarlos digital. Entonces se inicializa el módulo I2C y la pantalla LCD, aplicando un pequeño retardo. Después de limpiar la pantalla, se muestra el texto fijo “Caballo I2C”y seguidamente el programa entra en un ciclo infinito donde se ejecuta continuamente la función CabTrot(), encargada de realizar toda la animación del caballo, incluyendo los movimientos de galope mediante caracteres personalizados y el desplazamiento horizontal progresivo a través del display hasta llegar al extremo final de la pantalla, repitiendo posteriormente toda la secuencia de manera continua.
+ </p>
 
 ## Diagramas
 
