@@ -396,6 +396,41 @@ Esta es la función principal, configura la inicialización necesaria para ejecu
 
 ## Diagramas
 
+ <p align="justify" style="text-indent:40px;"> 
+Para la conexión de este laboratorio nos guiamos por el esquema de la figura 1 que fue brindado por el profesor,  de igual manera vale la pena resaltar que el I2C es un elemento el cual facilita mucho la conexión de la LCD, ya que reduce los pines de conexión a solo 4, dos de estos son de alimentación y los otros dos para la sincronización y transmición de la información, por medio de un protocolo de esclavbo maestro.
+ </p>
+
+<p align="center">
+  <img src="montaje (1).png" width="700"><br>
+  <em> <b> Figura 1.</b> Imagen de referencia de la conexión entre los elementos. </em>
+</p>
+
 ## Evidencias de implementación
 
+ <p align="justify" style="text-indent:40px;"> 
+El funcionamiento del montaje se puede observar a continuación en primera instancia, combinamos los dos primeros ejercicios y en la primera linea de la LCD se puede leer el texto estatico, mientras que en la segunda aparece el texto haciendo scroll por la pantalla. De igual forma vale la pena resaltar que es muy importante variar el potenciometro del I2C,para obtener un brillo aceptable o si no la pantalla parece apagada.
+ </p>
+
+<p align="center">
+  <img src="dets.gif" width="700"><br>
+  <em> <b> Figura 2.</b> Imagen del funcionamiento de la primera parte. </em>
+</p>
+
+<p align="justify" style="text-indent:40px;"> 
+Para la segunda parte del laboratorio, se mostro en la LCD una animación, en nuestro caso fue la de un caballo trotando, esta se puede apreciar en la fiigura a continuación.
+ </p>
+ 
+<p align="center">
+  <img src="sea.gif" width="700"><br>
+  <em> <b> Figura 3.</b> Imagen animación. </em>
+</p>
+
 ## Conclusiones
+
+* Se pudo comprender, como funciona la comunicación entre el microcontrolador y otros dispositivos, de igual forma se modularizaron todos los codigos y de esta manera los podemos volver a utilizar en algun proyecto y el main.c queda mucho más corto.
+
+* Se pudo comprobar la eficiencia para transmitir la información, a traves de diferentes elementos y de igual manera se comprendió como funciona el I2C tanto del pic como el físico para la transmición de información.
+
+* Se pudo verificar el funcionamiento del I2C, al mostrar caracteres especiales (como la animación), strings y texto movible. Esto convierte este protocolo de transmición de información en algo muy eficiente al no gastar tantos pines de conexión.
+
+* El módulo MSSP en modo maestro permitió establecer una comunicación I²C estable, demostrando la importancia de sincronizar correctamente las señales SDA y SCL para garantizar la transmisión de información.
